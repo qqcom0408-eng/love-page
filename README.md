@@ -1,0 +1,251 @@
+[index.html](https://github.com/user-attachments/files/31258484/index.html)
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#120018">
+<title>给你的一颗心 ❤️</title>
+<style>
+    *{box-sizing:border-box}
+    html,body{
+        width:100%;height:100%;margin:0;overflow:hidden;
+        background:radial-gradient(circle at 50% 40%,#3a082e 0%,#160018 38%,#050009 100%);
+        font-family:"Microsoft YaHei","PingFang SC",sans-serif;
+    }
+    body{color:#fff;touch-action:manipulation}
+    canvas{position:fixed;inset:0;width:100%;height:100%}
+    .vignette{
+        position:fixed;inset:0;pointer-events:none;
+        background:
+          radial-gradient(circle at 50% 48%,transparent 22%,rgba(0,0,0,.18) 60%,rgba(0,0,0,.48) 100%);
+    }
+    .title{
+        position:fixed;top:8vh;left:0;right:0;text-align:center;
+        font-size:clamp(22px,6vw,42px);font-weight:600;letter-spacing:.14em;
+        text-shadow:0 0 14px rgba(255,90,180,.8),0 0 35px rgba(255,50,120,.5);
+        animation:titleFloat 3.2s ease-in-out infinite;
+        user-select:none;
+    }
+    .subtitle{
+        position:fixed;top:16vh;left:0;right:0;text-align:center;
+        font-size:clamp(12px,3.2vw,18px);opacity:.82;letter-spacing:.25em;
+        color:#ffd8ed;
+        user-select:none;
+    }
+    .love{
+        position:fixed;left:0;right:0;bottom:10vh;text-align:center;
+        padding:0 24px;line-height:1.8;
+        font-size:clamp(15px,4vw,24px);
+        color:#ffe9f5;
+        text-shadow:0 0 12px rgba(255,120,180,.55);
+        user-select:none;
+    }
+    .hint{
+        position:fixed;bottom:3.5vh;left:0;right:0;text-align:center;
+        font-size:12px;color:rgba(255,255,255,.45);letter-spacing:.12em;
+        user-select:none;
+    }
+    @keyframes titleFloat{
+        0%,100%{transform:translateY(0)}
+        50%{transform:translateY(-6px)}
+    }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="vignette"></div>
+
+<div class="title">♡ 写给李怡萱的一颗心 ♡</div>
+<div class="subtitle">遇见你，是我最浪漫的意外</div>
+
+<div class="love" id="loveText">
+    李怡萱，这颗心只为你跳动。<br>
+    愿它每一次跳动，都在告诉你：<b>我喜欢你。</b>
+</div>
+
+<div class="hint">点击屏幕，让爱心跳得更猛烈一点 · ω ·</div>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+let W=innerWidth,H=innerHeight,DPR=Math.min(devicePixelRatio||1,2);
+
+function resize(){
+    W=innerWidth; H=innerHeight; DPR=Math.min(devicePixelRatio||1,2);
+    canvas.width=W*DPR; canvas.height=H*DPR;
+    canvas.style.width=W+"px"; canvas.style.height=H+"px";
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+addEventListener("resize",resize); resize();
+
+const TAU=Math.PI*2;
+const particles=[];
+const stars=[];
+
+function rand(a,b){return Math.random()*(b-a)+a}
+function heart2D(t){
+    return {
+        x:16*Math.pow(Math.sin(t),3),
+        y:13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t)
+    };
+}
+
+/* 生成一颗有“厚度”的 3D 参数心脏：
+   外层是心形曲线，内部通过随机填充形成体积 */
+for(let i=0;i<4200;i++){
+    const t=Math.random()*TAU;
+    const edge=heart2D(t);
+    const fill=Math.pow(Math.random(),0.42);
+    const x=edge.x*fill;
+    const y=edge.y*fill;
+    const z=(Math.random()*2-1)*(1-fill)*6 + rand(-2.2,2.2);
+    particles.push({
+        x,y,z,
+        ox:x,oy:y,oz:z,
+        size:rand(.7,2.2),
+        tw:rand(0,TAU),
+        hue:rand(320,355)
+    });
+}
+for(let i=0;i<180;i++){
+    stars.push({x:Math.random(),y:Math.random(),r:rand(.4,1.7),a:rand(.15,.8),s:rand(.0003,.0012)});
+}
+
+let shock=0;
+let pulseBoost=0;
+let rotation=0;
+
+canvas.addEventListener("pointerdown",()=>{
+    pulseBoost=1;
+    shock=1;
+    for(const s of stars) s.a=Math.min(1,s.a+.35);
+});
+
+function project(x,y,z,scale){
+    const f=520;
+    const zz=f/(f+z*scale);
+    return {
+        x:W/2 + x*scale*zz,
+        y:H/2 + (-y)*scale*zz,
+        z:zz
+    };
+}
+
+function draw(){
+    requestAnimationFrame(draw);
+    ctx.clearRect(0,0,W,H);
+
+    // 星尘背景
+    for(const s of stars){
+        s.a += (Math.random()-.5)*s.s*4;
+        s.a=Math.max(.08,Math.min(1,s.a));
+        const x=s.x*W,y=s.y*H;
+        ctx.beginPath();
+        ctx.arc(x,y,s.r,0,TAU);
+        ctx.fillStyle=`rgba(255,190,230,${s.a})`;
+        ctx.fill();
+    }
+
+    // 呼吸 + 点击冲击
+    pulseBoost *= .92;
+    shock *= .93;
+    const beat = 1 + 0.055*Math.pow(Math.max(0,Math.sin(performance.now()/260)),18) + pulseBoost*.15;
+    const scale=Math.min(W,H)*0.0158*beat;
+
+    rotation += 0.0045 + shock*0.018;
+    const cr=Math.cos(rotation), sr=Math.sin(rotation);
+
+    const projected=[];
+    for(const p of particles){
+        // 轻微漂浮，让爱心不是完全静态
+        const floatZ = p.oz + Math.sin(performance.now()/900 + p.tw)*0.35;
+        let x=p.ox, y=p.oy, z=floatZ;
+
+        // Y轴旋转，制造明显的立体感
+        const rx=x*cr-z*sr;
+        const rz=x*sr+z*cr;
+
+        const q=project(rx,y,rz,scale);
+        projected.push({...q, depth:rz, size:p.size, hue:p.hue});
+    }
+
+    projected.sort((a,b)=>a.depth-b.depth);
+
+    // 背光光晕
+    const g=ctx.createRadialGradient(W/2,H/2,10,W/2,H/2,scale*22);
+    g.addColorStop(0,"rgba(255,60,140,.22)");
+    g.addColorStop(.35,"rgba(255,40,120,.08)");
+    g.addColorStop(1,"rgba(255,0,100,0)");
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+    for(const p of projected){
+        const alpha=0.25+0.72*p.z;
+        const r=p.size*(0.55+0.9*p.z);
+        const grd=ctx.createRadialGradient(p.x-r*.4,p.y-r*.4,0,p.x,p.y,r*2.8);
+        grd.addColorStop(0,`hsla(${p.hue},100%,92%,${Math.min(1,alpha)})`);
+        grd.addColorStop(.2,`hsla(${p.hue},95%,72%,${Math.min(1,alpha*.95)})`);
+        grd.addColorStop(1,`hsla(${p.hue},100%,48%,0)`);
+        ctx.fillStyle=grd;
+        ctx.beginPath();ctx.arc(p.x,p.y,r*2.2,0,TAU);ctx.fill();
+    }
+
+    // 心脏中央的高光
+    const hi=ctx.createRadialGradient(W*.43,H*.40,0,W*.43,H*.40,scale*5);
+    hi.addColorStop(0,"rgba(255,255,255,.20)");
+    hi.addColorStop(1,"rgba(255,255,255,0)");
+    ctx.fillStyle=hi;ctx.fillRect(0,0,W,H);
+
+    // 小心心粒子
+    for(let i=0;i<10;i++){
+        const t=performance.now()/700+i;
+        const a=(Math.sin(t)+1)/2;
+        const ang=t*0.7+i*.63;
+        const rr=scale*(13+i*.45);
+        const x=W/2+Math.cos(ang)*rr;
+        const y=H/2-Math.sin(ang)*rr*.58;
+        ctx.save();
+        ctx.translate(x,y);
+        ctx.scale(.55+a*.35,.55+a*.35);
+        ctx.fillStyle=`rgba(255,160,210,${.18+a*.55})`;
+        drawHeart(ctx,0,0,7);
+        ctx.restore();
+    }
+
+    // 点击时出现一圈能量波
+    if(shock>.02){
+        ctx.beginPath();
+        ctx.arc(W/2,H/2,scale*(12+(1-shock)*22),0,TAU);
+        ctx.strokeStyle=`rgba(255,155,220,${shock*.35})`;
+        ctx.lineWidth=2;
+        ctx.stroke();
+    }
+}
+
+function drawHeart(c,x,y,s){
+    c.beginPath();
+    c.moveTo(x,y+s*.25);
+    c.bezierCurveTo(x-s*1.5,y-s*.75,x-s*1.2,y-s*1.7,x,y-s*.8);
+    c.bezierCurveTo(x+s*1.2,y-s*1.7,x+s*1.5,y-s*.75,x,y+s*.25);
+    c.fill();
+}
+
+draw();
+
+// 点击切换一句话
+const texts=[
+  ["李怡萱，这颗心只为你跳动。","愿每一次心跳，都把我的心意悄悄告诉你。"],
+  ["世界很大，遇见李怡萱刚刚好。","往后的每一次心动，都想和你分享。"],
+  ["我想把所有温柔，都藏进这颗心里。","愿它每一次跳动，都在告诉你：<b>我喜欢你。</b>"],
+  ["遇见李怡萱，是我最浪漫的意外。","希望这颗心跳动的时候，你也能收到我的心意。"],
+  ["如果心动有声音，","那一定是它在轻轻地说：<b>是你。</b>"],
+  ["星星会闪，月亮会亮。","而你，是我眼里最特别的光。"]
+];
+let idx=0;
+setInterval(()=>{
+    idx=(idx+1)%texts.length;
+    document.getElementById("loveText").innerHTML=texts[idx][0]+"<br>"+texts[idx][1];
+},4200);
+</script>
+</body>
+</html>
